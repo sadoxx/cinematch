@@ -1,6 +1,7 @@
 // Import the functions you need from the SDKs
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 // Note: Analytics is not typically used in React Native/Expo
 // If you need it, use @react-native-firebase/analytics instead
 
@@ -20,5 +21,5 @@ const app = initializeApp(firebaseConfig);
 
 // Initialize Firestore
 export const db = getFirestore(app);
-
+export const auth = getAuth(app);
 export default app;
