@@ -2,7 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator, Image, Dimensions, TextInput, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { useEffect, useState } from 'react';
 import { db, auth } from './firebase';
-import { collection, addDoc, serverTimestamp, onSnapshot, query } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, onSnapshot, query, where } from 'firebase/firestore';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth';
 
 const { height } = Dimensions.get('window');
@@ -44,30 +44,22 @@ export default function App() {
 
   // 3. Listen for Matches
   useEffect(() => {
-    if (!user) return;
+    if (!user || !movies[index]) return;
 
-    const q = query(collection(db, "liked_movies"));
+    const movieId = movies[index].id;
+    const q = query(collection(db, "liked_movies"), where("movieId", "==", movieId));
+    
     const unsub = onSnapshot(q, (snapshot) => {
-      const likes = snapshot.docs.map(d => d.data());
+      const userIds = snapshot.docs.map(doc => doc.data().userId);
+      const uniqueUsers = new Set(userIds);
       
-      // Check for duplicates
-      const likesByMovie = {};
-      likes.forEach(item => {
-        if (!likesByMovie[item.movieId]) likesByMovie[item.movieId] = [];
-        likesByMovie[item.movieId].push(item.userId);
-      });
-
-      for (const movieId in likesByMovie) {
-        const uniqueUsers = new Set(likesByMovie[movieId]);
-        if (uniqueUsers.size >= 2) {
-          const movie = likes.find(l => l.movieId === movieId);
-          Alert.alert("It's a Match!", `You both liked ${movie.movieTitle}`);
-        }
+      if (uniqueUsers.size >= 2 && uniqueUsers.has(user.uid)) {
+        Alert.alert("It's a Match!", `You both liked ${movies[index].title}`);
       }
     });
 
     return () => unsub();
-  }, [user]);
+  }, [user, index, movies]);
 
   const handleLike = async () => {
     if (!movies[index]) return;
